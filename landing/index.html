@@ -82,7 +82,16 @@
           <li><strong>Easy.</strong> The data model is a document store, like Firestore, RethinkDB, Mongo, or FaunaDB. Transactions are executed serially, like in a local database. The query model is SQL-ish. There is little new to learn. You use Replicant like you use any other local datastore, except it also syncs with the server and all other clients.
           <li><strong>Compatible.</strong> Replicant doesn’t demand that you move to a whole new server-side database or stack. It works alongside just about any existing technology.
         </ul>
-        </section>
+      </section>
+
+      <section>
+        <h2>Tradeoffs</h2>
+        <p>The main tradeoff is that transaction finalization in Replicant is delayed until synchronization.
+        <p>Imagine a user selects a username offline. We cannot know whether they got the username, or if it went to some faster user until we synchronize with the rest of the system.
+        <p>Replicant handles this by allowing transactions to proceed locally to a <em>pending</em> status. Transactions ony <em>finalize</em> once they are synced to the server. Finalization can modify the result of a transaction or even reverse it.
+        <p>In all cases transactions are guaranteed atomic and isolated. The system is always in a consistent state — the question is just which one.
+        <p>We find that this concept of delayed transaction finalization is a very natural mental model for client-side apps. It usually doesn't feel like extra work at all. In the rare case that developers do need to think about it, Replicant exposes the pending state of all transactions and data directly to developers, so that they can surface it to users.
+      </section>
         
         <section>
           <h2>Team</h2>
