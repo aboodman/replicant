@@ -36,6 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   List<Todo> _todos = [];
+
   Timer _timer;
 
   _MyHomePageState() {
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
          title: new Text('Todo List')
       ),
       drawer: TodoDrawer(_sync, _dropDatabase),
-      body: TodoList(_todos),
+      body: TodoList(_todos, _handleDoneChanged),
       floatingActionButton: new FloatingActionButton(
         onPressed: _pushAddTodoScreen,
         tooltip: 'Add task',
@@ -73,6 +74,11 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _todos = todos;
     });
+  }
+
+  Future<void> _handleDoneChanged(String id, bool isDone) async {
+    await _replicant.exec('setDone', [id, isDone]);
+    _load();
   }
 
   Future<void> _registerBundle() async {
@@ -105,7 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
     
     try {
       _timer = null;
-      await _replicant.sync('https://replicate.to/serve/boodman-todos-1');
+      await _replicant.sync('https://replicate.to/serve/susan-todos-1');
       await _load();
     } catch (e) {
       print('ERROR DURING SYNC');
@@ -170,8 +176,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class TodoList extends StatelessWidget {
   final List<Todo> _todos;
+  final Future<void> Function(String, bool) _handleDoneChange;
 
-  TodoList(this._todos);
+  TodoList(this._todos, this._handleDoneChange);
 
   // Build the whole list of todo items
   @override
@@ -182,9 +189,17 @@ class TodoList extends StatelessWidget {
         // list to fill up its available space, which is most likely more than the
         // number of todo items we have. So, we need to check the index is OK.
         if(index < _todos.length) {
-          return new ListTile(
-            title: new Text(_todos[index].title),
-            onTap: () => _handleRemove(index)
+          //return new ListTile(
+            //title: new Text(_todos[index].title),
+            var todo = _todos[index];
+            return new CheckboxListTile(
+              title: new Text(todo.title),
+              value: todo.done,
+              onChanged: (bool newValue) {
+                _handleDoneChange(todo.id, newValue);
+              },
+              
+            //onTap: () => _handleRemove(index)
           );
         }
       },
