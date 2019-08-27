@@ -36,7 +36,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   List<Todo> _todos = [];
-
   Timer _timer;
 
   _MyHomePageState() {
@@ -111,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
     
     try {
       _timer = null;
-      await _replicant.sync('https://replicate.to/serve/susan-todos-1');
+      await _replicant.sync('https://replicate.to/serve/boodman-todos-1');
       await _load();
     } catch (e) {
       print('ERROR DURING SYNC');
@@ -189,18 +188,14 @@ class TodoList extends StatelessWidget {
         // list to fill up its available space, which is most likely more than the
         // number of todo items we have. So, we need to check the index is OK.
         if(index < _todos.length) {
-          //return new ListTile(
-            //title: new Text(_todos[index].title),
             var todo = _todos[index];
-            return new CheckboxListTile(
+            return new CheckboxListTile (
               title: new Text(todo.title),
               value: todo.done,
               onChanged: (bool newValue) {
                 _handleDoneChange(todo.id, newValue);
               },
-              
-            //onTap: () => _handleRemove(index)
-          );
+            );
         }
       },
     );
