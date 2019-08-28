@@ -204,13 +204,8 @@ class TodoList extends StatelessWidget {
         var todo = _todos[index];
         var id = todo.id;
         return Dismissible(
-          // Each Dismissible must contain a Key. Keys allow Flutter to
-          // uniquely identify widgets.
           key: Key(id),
-          // Provide a function that tells the app
-          // what to do after an item has been swiped away.
           onDismissed: (direction) {
-            // Remove the item from the data source.
               _handleRemove(id);
           },
           // Show a red background as the item is swiped away.
