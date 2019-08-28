@@ -40,6 +40,7 @@ public class MainActivity extends FlutterActivity {
             // Tempting to use AsyncTask but I'm not sure how many threads the backing pool
             // has and don't want sync(), which can block for a long time, to block other
             // calls into Replicant which should be near-instant.
+            Log.i("Replicant", "Calling: " + call.method + " with arguments: " + (String)call.arguments);
             new Thread(new Runnable() {
               public void run() {
                 if (call.method.equals("open")) {

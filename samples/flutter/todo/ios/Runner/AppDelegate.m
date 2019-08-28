@@ -5,7 +5,11 @@
 #include "AppDelegate.h"
 #include "GeneratedPluginRegistrant.h"
 
+const NSString* CHANNEL_NAME = @"replicant.dev";
+
 @implementation AppDelegate
+
+  RepmConnection* conn;
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -13,29 +17,26 @@
   FlutterViewController* controller = (FlutterViewController*)self.window.rootViewController;
   
   FlutterMethodChannel* channel = [FlutterMethodChannel
-                                   methodChannelWithName:@"replicant.dev/samples/todo"
+                                   methodChannelWithName:CHANNEL_NAME
                                    binaryMessenger:controller];
-
-  NSString* dir = [self replicantDir];
-  if (dir == nil) {
-    return FALSE;
-  }
-  
-  NSLog(@"Replicant: Opening database at: %@", dir);
-
-  NSError *err;
-  // TODO: clientid needs to be device-unique
-  // Need to generate and store one in user prefs or something.
-  RepmConnection *conn = RepmOpen(dir, @"ios/c1", @"", &err);
-  if (err != nil) {
-    NSLog(@"Replicant: Could not open database: %@", err);
-    return FALSE;
-  }
 
   [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+      if ([call.method isEqual:@"open"]) {
+        conn = [self handleOpen:call.arguments];
+        result(@"");
+        return;
+      }
+
+      if (conn == nil) {
+        result([NSError errorWithDomain:@"Replicant"
+                                   code:1
+                               userInfo:@{NSLocalizedDescriptionKey: NSLocalizedString(@"Replicant database has not been opened.", nil)}]);
+        return;
+      }
+
       NSError *err;
-      NSLog(@"Replicant: Sending arguments: %@", call.arguments);
+      NSLog(@"Replicant: Calling: %@ with arguments: %@", call.method, call.arguments);
       NSData* res = [conn dispatch:call.method
                               data:[call.arguments dataUsingEncoding:NSUTF8StringEncoding]
                              error:&err];
@@ -55,7 +56,25 @@
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (NSString*)replicantDir {
+- (RepmConnection*)handleOpen:(NSString*)dbName {
+  NSString* repDir = [self replicantDir: dbName];
+  if (repDir == nil) {
+    return nil;
+  }
+
+  NSError *err;
+  // TODO: clientid needs to be device-unique
+  // Need to generate and store one in user prefs or something.
+  RepmConnection *conn = RepmOpen(repDir, @"ios/c1", @"", &err);
+  if (err != nil) {
+    NSLog(@"Replicant: Could not open database: %@", err);
+    return nil;
+  }
+
+  return conn;
+}
+
+- (NSString*)replicantDir:(NSString*)dbName {
   NSFileManager* sharedFM = [NSFileManager defaultManager];
   NSArray* possibleURLs = [sharedFM URLsForDirectory:NSApplicationSupportDirectory
                                            inDomains:NSUserDomainMask];
@@ -71,7 +90,8 @@
   appSupportDir = [possibleURLs objectAtIndex:0];
   NSString* appBundleID = [[NSBundle mainBundle] bundleIdentifier];
   dataDir = [appSupportDir URLByAppendingPathComponent:appBundleID];
-  dataDir = [dataDir URLByAppendingPathComponent:@"replicant/db"];
+  dataDir = [dataDir URLByAppendingPathComponent:@"replicant"];
+  dataDir = [dataDir URLByAppendingPathComponent:dbName];
   
   NSError *err;
   [sharedFM createDirectoryAtPath:[dataDir path] withIntermediateDirectories:TRUE attributes:nil error:&err];
