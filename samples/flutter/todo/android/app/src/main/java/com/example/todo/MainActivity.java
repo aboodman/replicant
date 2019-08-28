@@ -16,7 +16,7 @@ import java.util.Date;
 import android.util.Log;
 
 public class MainActivity extends FlutterActivity {
-  private static final String CHANNEL = "replicant.dev/samples/todo";
+  private static final String CHANNEL = "replicant.dev";
 
   private static repm.Connection conn;
 
@@ -28,15 +28,9 @@ public class MainActivity extends FlutterActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    uiThreadHandler = new Handler(Looper.getMainLooper());
-
     GeneratedPluginRegistrant.registerWith(this);
 
-    initTempDir();
-    initConnection();
-    if (conn == null) {
-      return;
-    }
+    uiThreadHandler = new Handler(Looper.getMainLooper());
 
     new MethodChannel(getFlutterView(), CHANNEL).setMethodCallHandler(
       new MethodCallHandler() {
@@ -48,14 +42,26 @@ public class MainActivity extends FlutterActivity {
             // calls into Replicant which should be near-instant.
             new Thread(new Runnable() {
               public void run() {
+                if (call.method.equals("open")) {
+                  MainActivity.this.handleOpen((String)call.arguments);
+                  sendResult(result, new byte[0], null);
+                  return;
+                }
+
+                if (conn == null) {
+                  sendResult(result, new byte[0], new Exception("Replicant database has not been opened"));
+                  return;
+                }
+
                 // TODO: Avoid conversion here - can dart just send as bytes?
                 byte[] argData = new byte[0];
+                byte[] resultData = null;
+                Exception exception = null;
+
                 if (call.arguments != null) {
                   argData = ((String)call.arguments).getBytes();
                 }
 
-                byte[] resultData = null;
-                Exception exception = null;
                 try {
                   resultData = conn.dispatch(call.method, argData);
                 } catch (Exception e) {
@@ -85,28 +91,24 @@ public class MainActivity extends FlutterActivity {
     });
   }
 
-  private void initConnection() {
-    try {
-      if (MainActivity.conn == null) {
-        File f = this.getFileStreamPath("db3");
-        MainActivity.conn = repm.Repm.open(f.getAbsolutePath(), "client1", tmpDir.getAbsolutePath());
-      }
-    } catch (Exception e) {
-      Log.e("Replicant", "Could not create connection: " + e.toString());
-    }
-  }
+  private void handleOpen(String dbName) {
+    File replicantDir = new File(this.getFileStreamPath("replicant"), dbName);
+    File dataDir = new File(replicantDir, "data");
+    File tmpDir = new File(replicantDir, "temp");
 
-  private void initTempDir() throws RuntimeException {
-    if (tmpDir != null) {
-      return;
-    }
-
-    tmpDir = new File(new File(getCacheDir(), "replicant"), "temp");
     if (!tmpDir.exists()) {
       if (!tmpDir.mkdirs()) {
-        throw new RuntimeException("Could not make temp dir!");
+        Log.e("Replicant", "Could not create temp directory");
+        return;
       }
     }
     tmpDir.deleteOnExit();
+
+    try {
+      // TODO: Properly set client ID.
+      MainActivity.conn = repm.Repm.open(dataDir.getAbsolutePath(), "android/c1", tmpDir.getAbsolutePath());
+    } catch (Exception e) {
+      Log.e("Replicant", "Could not open Replicant database", e);
+    }
   }
 }

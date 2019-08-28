@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'model.dart';
 import 'replicant.dart';
 
+const dbName = "todo";
 const bundleVersion = 2;
 
 void main() => runApp(MyApp());
@@ -31,7 +32,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static final _replicant = Replicant('replicant.dev/samples/todo');
+  static final _replicant = Replicant(dbName);
 
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
@@ -85,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       registeredVersion = await _replicant.exec('codeVersion');
     } catch (e) {
-      print(e.toString());
       // https://github.com/aboodman/replicant/issues/25
       if (!e.toString().contains("Unknown function: codeVersion")) {
         throw e;
