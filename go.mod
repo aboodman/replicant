@@ -13,7 +13,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5 // indirect
+	golang.org/x/mobile v0.0.0-20190830201351-c6da95954960 // indirect
 	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/grpc v1.22.1 // indirect
