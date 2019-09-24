@@ -8,29 +8,86 @@
  * https://github.com/facebook/react-native
  */
  
-import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, View, Button, Image } from 'react-native';
+import {
+  AppRegistry,
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  AsyncStorage,
+  Button,
+  TextInput,
+  Keyboard,
+  Platform,
+  Image
+} from "react-native";
 import Replicant from 'replicant-react-native';
 
-export default class App extends Component<{}> {
+const viewPadding = 10;
+
+export default class App extends Component {
   state = {
     root: '',
+    text: "",
+    todos: []
   };
+
+  changeTextHandler = text => {
+    this.setState({ text: text });
+  };
+
+  deleteTodo = async (key) => {
+    if (key != null) {
+      await this._replicant.exec('deleteTodo', [key]);
+      this.load();
+    }
+  };
+
+  addTodo = async () => {
+    let text = this.state.text;
+
+    let notEmpty = text.trim().length > 0;
+
+    if (notEmpty) {
+      const todoId = Math.floor(Math.random() * 1000);
+      await this._replicant.exec('addTodo', [todoId, text, 1, false]);
+      this.load();
+    }
+
+    // clear textinput field after todo has been added
+    this.state.text = "";
+  }
+
+  load = async () => {
+    todos = await this._replicant.exec('getAllTodos');   
+    
+    this.setState({
+      todos,
+    });
+  }
+
   async componentDidMount() {
     this._replicant = new Replicant('https://replicate.to/serve/react-native-test');
     await this._initBundle();
+
+    this._replicant.onChange = this.load;
 
     const root = await this._replicant.root();
     this.setState({
       root,
     });
 
-    await this._replicant.exec('addTodo', ['1', 'Pickup Abby', 1, false]);
-    await this._replicant.exec('addTodo', ['1', 'Pickup Sam', 2, false]);
-    console.warn('all todos', await this._replicant.exec('getAllTodos'));
+    this.load();
+  
+    Keyboard.addListener(
+      "keyboardWillShow",
+      e => this.setState({ viewPadding: e.endCoordinates.height + viewPadding })
+    );
 
-    await this._replicant.exec('deleteAllTodos');
-    console.warn('after delete', await this._replicant.exec('getAllTodos'));
+    Keyboard.addListener(
+      "keyboardWillHide",
+      () => this.setState({ viewPadding: viewPadding })
+    );
   }
 
   async _handleSync() {
@@ -46,10 +103,31 @@ export default class App extends Component<{}> {
 
   render() {
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>☆Replicant example☆</Text>
-        <Text style={styles.instructions}>Current root: {this.state.root}</Text>
-        <Button onPress={this._handleSync} title="Sync"/>
+      <View style={[styles.container, { paddingBottom: this.state.viewPadding }]}>
+        <TextInput
+          style={styles.textInput}
+          onChangeText={this.changeTextHandler}
+          onSubmitEditing={this.addTodo}
+          value={this.state.text}
+          placeholder="Add Tasks"
+          returnKeyType="done"
+          returnKeyLabel="done"
+        />
+        <FlatList
+          style={styles.list}
+          data={this.state.todos}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) =>
+            <View key={item.id}>
+              <View style={styles.listItemCont}>
+                <Text style={styles.listItem}>
+                  {item.value.title}
+                </Text>
+                <Button title="X" onPress={() => this.deleteTodo(item.id)} />
+              </View>
+              <View style={styles.hr} />
+            </View>}
+        />
       </View>
     );
   }
@@ -58,18 +136,36 @@ export default class App extends Component<{}> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5FCFF",
+    padding: viewPadding,
+    paddingTop: 50
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  list: {
+    width: "100%"
   },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+  listItem: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    fontSize: 14,
+    color: "#333333"
   },
+  hr: {
+    height: 1,
+    //backgroundColor: "gray"
+  },
+  listItemCont: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  textInput: {
+    height: 40,
+    paddingRight: 10,
+    paddingLeft: 10,
+    borderColor: "#AAAAAA",
+    borderWidth: 1,
+    width: "100%"
+  }
 });
