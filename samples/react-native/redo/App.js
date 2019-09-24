@@ -36,6 +36,25 @@ export default class App extends Component {
     this.setState({ text: text });
   };
 
+  // calculates the order field by halving the distance between the left and right neighbor orders.
+  // min default value = -minPositive
+  // max default value = double.maxFinite
+  getNewOrder = index => {
+    //console.warn('In getNewOrder index: ', index);
+    todos = this.state.todos;
+    //console.warn('In getNewOrder todos.length: ', todos.length);
+    //console.warn('In getNewOrder todos[index-1]: ', todos[index-1]);
+    minOrderValue = 0;
+    maxOrderValue = 100; //Number.MAX_VALUE;
+    //console.warn('In getNewOrder maxOrderValue]: ', maxOrderValue, ' minOrderValue: ', minOrderValue);
+    leftNeighborOrder = index == 0 ? minOrderValue : todos[index-1].value.order;
+    rightNeighborOrder = index == todos.length ? maxOrderValue : todos[index].value.order;
+    //console.warn('In getNewOrder leftNeighborOrder]: ', leftNeighborOrder, ' rightNeighborOrder: ', rightNeighborOrder);
+    order = leftNeighborOrder + ((rightNeighborOrder - leftNeighborOrder)/2);
+    //console.warn('In getNewOrder order: ', order);
+    return order;
+  }
+
   deleteTodo = async (key) => {
     if (key != null) {
       await this._replicant.exec('deleteTodo', [key]);
@@ -44,13 +63,20 @@ export default class App extends Component {
   };
 
   addTodo = async () => {
+    //var uuid = new Uuid();
+    
+    let todos = this.state.todos;
     let text = this.state.text;
-
     let notEmpty = text.trim().length > 0;
 
     if (notEmpty) {
       const todoId = Math.floor(Math.random() * 1000);
-      await this._replicant.exec('addTodo', [todoId, text, 1, false]);
+      const index = todos.length == 0 ? 0 : todos.length;
+      //console.warn ('in Addtodo: ', todoId, ' index: ', index);
+      const order = this.getNewOrder(index);
+      const done = false;
+      await this._replicant.exec('addTodo', [todoId, text, order, done]);
+      console.warn ('addTodo', todoId, ' ', text, ' ', order, ' ', done);
       this.load();
     }
 
@@ -60,6 +86,8 @@ export default class App extends Component {
 
   load = async () => {
     todos = await this._replicant.exec('getAllTodos');   
+
+    todos.sort(function(a, b){return a.value.order - b.value.order});
     
     this.setState({
       todos,
