@@ -29,7 +29,6 @@ export default class App extends Component {
     root: '',
     text: "",
     todos: [],
-    checkBoxChecked: []
   };
 
   changeTextHandler = text => {
@@ -38,18 +37,12 @@ export default class App extends Component {
 
   // calculates the order field by halving the distance between the left and right neighbor orders.
   getNewOrder = index => {
-    //console.warn('In getNewOrder index: ', index);
-    todos = this.state.todos;
-    //console.warn('In getNewOrder todos.length: ', todos.length);
-    //console.warn('In getNewOrder todos[index-1]: ', todos[index-1]);
-    minOrderValue = 0;
-    maxOrderValue = 100; //Number.MAX_VALUE;
-    //console.warn('In getNewOrder maxOrderValue]: ', maxOrderValue, ' minOrderValue: ', minOrderValue);
-    leftNeighborOrder = index == 0 ? minOrderValue : todos[index-1].value.order;
-    rightNeighborOrder = index == todos.length ? maxOrderValue : todos[index].value.order;
-    //console.warn('In getNewOrder leftNeighborOrder]: ', leftNeighborOrder, ' rightNeighborOrder: ', rightNeighborOrder);
-    order = leftNeighborOrder + ((rightNeighborOrder - leftNeighborOrder)/2);
-    //console.warn('In getNewOrder order: ', order);
+    const todos = this.state.todos;
+    const minOrderValue = 0;
+    const maxOrderValue = Number.MAX_VALUE;
+    const leftNeighborOrder = index == 0 ? minOrderValue : todos[index-1].value.order;
+    const rightNeighborOrder = index == todos.length ? maxOrderValue : todos[index].value.order;
+    const order = leftNeighborOrder + ((rightNeighborOrder - leftNeighborOrder)/2);
     return order;
   }
 
@@ -61,15 +54,13 @@ export default class App extends Component {
   };
 
   setTextDecorationLine(isDone) {
-    //console.warn('isDone: ', isDone);
-    textDecoration = 'none';
+    let textDecoration = 'none';
     if (isDone) textDecoration = 'line-through';
 
     return textDecoration;
   }
 
   handleDone = async (key, prevDone) => {
-    //console.warn('key: ', key, ' prevDone: ', prevDone);
     if (key != null) {
       let isDone = !prevDone;
       await this._replicant.exec('setDone', [key, isDone]);
@@ -83,25 +74,26 @@ export default class App extends Component {
     let notEmpty = text.trim().length > 0;
 
     if (notEmpty) {
-      const todoId = Math.floor(Math.random() * 1000);
+      const uid = await this._replicant.exec('uid'); //Math.floor(Math.random() * 1000);
       const index = todos.length == 0 ? 0 : todos.length;
-      //console.warn ('in Addtodo: ', todoId, ' index: ', index);
       const order = this.getNewOrder(index);
       const done = false;
-      await this._replicant.exec('addTodo', [todoId, text, order, done]);
-      //console.warn ('addTodo', todoId, ' ', text, ' ', order, ' ', done);
+      await this._replicant.exec('addTodo', [uid, text, order, done]);
       this.load();
     }
 
     // clear textinput field after todo has been added
-    this.state.text = "";
+    this.setState({
+      text: "",
+    });
+    
+    // set focus to textInput box after text has been submitted
     this.refs.addTodoTextInput.focus();
   }
 
   load = async () => {
-    todos = await this._replicant.exec('getAllTodos');   
-    //console.warn ('todos:', todos);
-
+    let todos = await this._replicant.exec('getAllTodos');   
+    
     // sort todos by order field
     todos.sort(function(a, b){return a.value.order - b.value.order});
     
@@ -135,7 +127,7 @@ export default class App extends Component {
   }
 
   async _handleSync() {
-    const result = await Replicant.dispatch('sync', JSON.stringify({remote: 'https://replicate.to/serve/react-native-test'}));
+    const result = this._replicant.sync('https://replicate.to/serve/react-native-test');
     console.log('Sync result was', result);
   }
 
@@ -172,7 +164,6 @@ export default class App extends Component {
                   onPress={() => this.handleDone(item.id, item.value.done)} >
                   {item.value.title}
                 </Text>
-                {/*<Switch value={item.value.done} onValueChange={(value) => this.handleDone(item.id, value)} />*/}
               <Button title="X" onPress={() => this.deleteTodo(item.id)} />
               </View>
               <View style={styles.hr} />
@@ -200,11 +191,9 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     fontSize: 14,
     color: "#333333",
-    //textDecorationLine: isLineThrough,
   },
   hr: {
     height: 1,
-    //backgroundColor: "gray"
   },
   listItemCont: {
     flexDirection: "row",
@@ -219,5 +208,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: "100%"
   },
-  
 });
