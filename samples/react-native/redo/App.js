@@ -14,7 +14,6 @@ import {
   Text,
   View,
   FlatList,
-  AsyncStorage,
   Button,
   TextInput,
   Keyboard,
@@ -29,7 +28,8 @@ export default class App extends Component {
   state = {
     root: '',
     text: "",
-    todos: []
+    todos: [],
+    checkBoxChecked: []
   };
 
   changeTextHandler = text => {
@@ -37,8 +37,6 @@ export default class App extends Component {
   };
 
   // calculates the order field by halving the distance between the left and right neighbor orders.
-  // min default value = -minPositive
-  // max default value = double.maxFinite
   getNewOrder = index => {
     //console.warn('In getNewOrder index: ', index);
     todos = this.state.todos;
@@ -62,9 +60,24 @@ export default class App extends Component {
     }
   };
 
+  setTextDecorationLine(isDone) {
+    //console.warn('isDone: ', isDone);
+    textDecoration = 'none';
+    if (isDone) textDecoration = 'line-through';
+
+    return textDecoration;
+  }
+
+  handleDone = async (key, prevDone) => {
+    //console.warn('key: ', key, ' prevDone: ', prevDone);
+    if (key != null) {
+      let isDone = !prevDone;
+      await this._replicant.exec('setDone', [key, isDone]);
+      this.load();
+    }
+  };
+
   addTodo = async () => {
-    //var uuid = new Uuid();
-    
     let todos = this.state.todos;
     let text = this.state.text;
     let notEmpty = text.trim().length > 0;
@@ -76,17 +89,20 @@ export default class App extends Component {
       const order = this.getNewOrder(index);
       const done = false;
       await this._replicant.exec('addTodo', [todoId, text, order, done]);
-      console.warn ('addTodo', todoId, ' ', text, ' ', order, ' ', done);
+      //console.warn ('addTodo', todoId, ' ', text, ' ', order, ' ', done);
       this.load();
     }
 
     // clear textinput field after todo has been added
     this.state.text = "";
+    this.refs.addTodoTextInput.focus();
   }
 
   load = async () => {
     todos = await this._replicant.exec('getAllTodos');   
+    //console.warn ('todos:', todos);
 
+    // sort todos by order field
     todos.sort(function(a, b){return a.value.order - b.value.order});
     
     this.setState({
@@ -133,6 +149,7 @@ export default class App extends Component {
     return (
       <View style={[styles.container, { paddingBottom: this.state.viewPadding }]}>
         <TextInput
+          ref="addTodoTextInput"
           style={styles.textInput}
           onChangeText={this.changeTextHandler}
           onSubmitEditing={this.addTodo}
@@ -140,6 +157,9 @@ export default class App extends Component {
           placeholder="Add Tasks"
           returnKeyType="done"
           returnKeyLabel="done"
+          autoFocus={true}
+          autoCorrect={false}
+
         />
         <FlatList
           style={styles.list}
@@ -148,10 +168,12 @@ export default class App extends Component {
           renderItem={({ item }) =>
             <View key={item.id}>
               <View style={styles.listItemCont}>
-                <Text style={styles.listItem}>
+                <Text style={[styles.listItem, { textDecorationLine: this.setTextDecorationLine(item.value.done)}]}
+                  onPress={() => this.handleDone(item.id, item.value.done)} >
                   {item.value.title}
                 </Text>
-                <Button title="X" onPress={() => this.deleteTodo(item.id)} />
+                {/*<Switch value={item.value.done} onValueChange={(value) => this.handleDone(item.id, value)} />*/}
+              <Button title="X" onPress={() => this.deleteTodo(item.id)} />
               </View>
               <View style={styles.hr} />
             </View>}
@@ -177,7 +199,8 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 10,
     fontSize: 14,
-    color: "#333333"
+    color: "#333333",
+    //textDecorationLine: isLineThrough,
   },
   hr: {
     height: 1,
@@ -195,5 +218,6 @@ const styles = StyleSheet.create({
     borderColor: "#AAAAAA",
     borderWidth: 1,
     width: "100%"
-  }
+  },
+  
 });
