@@ -10,13 +10,13 @@
  
 import React, { Component } from 'react';
 import {
-  Text,
-  View,
-  FlatList,
   Button,
-  TextInput,
+  FlatList,
   Keyboard,
-  Image
+  Image,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 import Replicant from 'replicant-react-native';
 import { styles, viewPadding } from './styles.js'; 
@@ -88,7 +88,7 @@ export default class App extends Component {
     );
   }
 
-  async _initBundle() {
+  _initBundle = async () => {
     const resource = require('./replicant.bundle');
     const resolved = Image.resolveAssetSource(resource);
     await this._replicant.putBundle(await (await fetch(resolved.uri)).text());
@@ -164,7 +164,7 @@ export default class App extends Component {
     }
   };
 
-  async _handleSync() {
+  _handleSync = async () => {
     const result = this._replicant.sync('https://replicate.to/serve/react-native-test');
   }
 }
