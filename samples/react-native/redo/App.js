@@ -8,8 +8,8 @@
  * https://github.com/facebook/react-native
  */
  
+import React, { Component } from 'react';
 import {
-  AppRegistry,
   StyleSheet,
   Text,
   View,
@@ -17,7 +17,6 @@ import {
   Button,
   TextInput,
   Keyboard,
-  Platform,
   Image
 } from "react-native";
 import Replicant from 'replicant-react-native';
