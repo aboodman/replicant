@@ -5371,7 +5371,7 @@ repeat-string@^1.6.1:
 
 replicant-react-native@../../../bind/react-native/build/replicant-react-native.tar.gz:
   version "1.0.0"
-  resolved "../../../bind/react-native/build/replicant-react-native.tar.gz#3cd0fa876f8b97a7ae66cbf6c7f517e8965394b7"
+  resolved "../../../bind/react-native/build/replicant-react-native.tar.gz#3e835add50a6a31195b9c352dc799c95f517d71b"
 
 request-promise-core@1.1.2:
   version "1.1.2"
