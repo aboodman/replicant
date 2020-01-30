@@ -43,8 +43,8 @@ The key features that contribute to Replicant's leap in usability are:
 * **Transactions**: Replicant supports full [ACID](https://en.wikipedia.org/wiki/ACID_(computer_science)) multikey read/write 
 transactions. Transactions in Replicant are expressed as arbitrary functions, which are executed serially and isolated from 
 each other.
-* **Virtually Conflict-free**: Replicant is a [Convergent Causal Consistent](https://jepsen.io/consistency/models/causal) system: after synchronization, transactions are guaranteed to have run in the same order on all nodes, resulting in the same database state. This feature, combined with transaction atomicity,
-means that developers rarely need to think about conflicts. Conflicts do still happen, but in almost all cases conflict resolution is a natural side-effect of serialized atomic transactions.
+* **Much Easier Conflict-Resolution**: Replicant is a [Convergent Causal Consistent](https://jepsen.io/consistency/models/causal) system: after synchronization, transactions are guaranteed to have run in the same order on all nodes, resulting in the same database state. This feature, combined with transaction atomicity,
+makes conflict resolution much easier. Conflicts do still happen, but in many cases resolution is a natural side-effect of serialized atomic transactions. In the remaining cases, reasoning about conflicts is made far simpler. These claims have been reviewed by independent Distributed Systems expert Kyle Kingsbury of Jepsen. See [Jepsen Summary](jepsen-summary.md) and [Jepsen Article](jepsen-article.pdf).
 * **Standard Data Model**: The Replicant data model is a standard document database. From an API perspective, it's
 very similar to Google Cloud Firestore, MongoDB, Couchbase, FaunaDB, and many others. You don't need to learn anything new, 
 and can build arbitrarily complex data structures on this primitive that are still conflict-free.
