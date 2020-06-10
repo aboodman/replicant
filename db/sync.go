@@ -49,7 +49,12 @@ func (db *DB) Sync(remote spec.Spec) error {
 	}
 
 	// 3: Pull remote head to client
+	fmt.Println("pulling", remoteHead.TargetHash())
 	datas.Pull(remoteDB.noms, db.noms, remoteHead, progress)
+	err = db.Reload()
+	if err != nil {
+		return err
+	}
 
 	// Lock here because all work from here on out is local and we are going to read/write
 	// local state.
@@ -102,10 +107,15 @@ func remoteSync(remote spec.Spec, remoteDB *DB, commit Commit) (newHead types.Re
 	if !ok {
 		return newHead, errors.New("Could not parse sync response from server as hash: " + buf.String())
 	}
+	err = remoteDB.Reload()
+	if err != nil {
+		return newHead, err
+	}
 	v := remoteDB.Noms().ReadValue(h)
 	if v == nil {
 		return newHead, fmt.Errorf("Could not read merged head '%s' from remote server", h.String())
 	}
+	fmt.Println("server head: ", v.Hash())
 	return types.NewRef(v), nil
 }
 
